@@ -1,0 +1,10 @@
+Universal LPC Spritesheet Character Generator
+https://github.com/sanderfrenken/Universal-LPC-Spritesheet-Character-Generator
+
+Assets are from the Liberated Pixel Cup (LPC) collection and community contributions.
+Licenses vary by asset (typically CC-BY-SA 3.0 and/or GPL 3.0).
+See the generator repository for full attribution per spritesheet.
+
+Authors include (among others):
+bluecarrot16, Benjamin K. Smith (BenCreating), Evert, Eliza Wyatt (ElizaWy),
+Johannes Sjölund (wulax), Stephen Challener (Redshrike), and many contributors.

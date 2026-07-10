@@ -1,0 +1,50 @@
+# Gradle / Android build
+.gradle/
+build/
+app/build/
+**/build/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Local machine config
+local.properties
+*.iml
+.DS_Store
+Thumbs.db
+
+# IDE — Android Studio / IntelliJ
+.idea/
+!.idea/codeStyles/
+!.idea/inspectionProfiles/
+!.idea/runConfigurations/
+!.idea/vcs.xml
+*.ipr
+*.iws
+
+# Kotlin
+.kotlin/
+
+# Signing (never commit keys)
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# Logs & temp
+*.log
+*.tmp
+*.swp
+*~
+
+# OS / editor
+.vscode/
+*.orig
+
+# Release artifacts (APK copies for distribution)
+releases/
