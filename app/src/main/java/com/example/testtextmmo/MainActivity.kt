@@ -19,12 +19,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val appState = remember { AppState() }
             val settings = appState.settings
-            TestTextMMOTheme(
-                themeMode = settings.themeMode,
-                colorTheme = settings.colorTheme,
-                textColorPreset = settings.textColorPreset,
-                hideStatusBar = settings.hideStatusBar
-            ) {
+            TestTextMMOTheme(hideStatusBar = settings.hideStatusBar) {
                 val density = LocalDensity.current
                 CompositionLocalProvider(
                     LocalDensity provides Density(

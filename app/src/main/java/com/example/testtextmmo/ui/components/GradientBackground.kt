@@ -1,5 +1,6 @@
 package com.example.testtextmmo.ui.components
 
+import android.os.Build
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -11,63 +12,126 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import com.example.testtextmmo.ui.theme.ArcaneViolet
-import com.example.testtextmmo.ui.theme.ArcaneVioletDim
-import com.example.testtextmmo.ui.theme.MysticCyan
-import com.example.testtextmmo.ui.theme.MysticCyanDim
-import com.example.testtextmmo.ui.theme.NightSurface
-import com.example.testtextmmo.ui.theme.VoidBlack
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil.ImageLoader
+import coil.compose.AsyncImage
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
+import coil.request.ImageRequest
+import com.example.testtextmmo.ui.theme.AppWallpaper
+
+@Composable
+fun rememberGifImageLoader(): ImageLoader {
+    val context = LocalContext.current
+    return remember(context) {
+        ImageLoader.Builder(context)
+            .components {
+                if (Build.VERSION.SDK_INT >= 28) {
+                    add(ImageDecoderDecoder.Factory())
+                } else {
+                    add(GifDecoder.Factory())
+                }
+            }
+            .build()
+    }
+}
+
+/** Saturation > 1 makes colors richer; 1 = identity. */
+fun vividWallpaperColorFilter(saturation: Float = 1.45f, contrast: Float = 1.12f): ColorFilter {
+    val invSat = 1f - saturation
+    val r = 0.213f * invSat
+    val g = 0.715f * invSat
+    val b = 0.072f * invSat
+    val translate = 128f * (1f - contrast)
+    val matrix = ColorMatrix(
+        floatArrayOf(
+            (r + saturation) * contrast, g * contrast, b * contrast, 0f, translate,
+            r * contrast, (g + saturation) * contrast, b * contrast, 0f, translate,
+            r * contrast, g * contrast, (b + saturation) * contrast, 0f, translate,
+            0f, 0f, 0f, 1f, 0f
+        )
+    )
+    return ColorFilter.colorMatrix(matrix)
+}
 
 @Composable
 fun AnimatedGradientBackground(
+    wallpaper: AppWallpaper = AppWallpaper.AURORA,
     modifier: Modifier = Modifier,
     animationsEnabled: Boolean = true
 ) {
+    val context = LocalContext.current
+    val imageLoader = rememberGifImageLoader()
+    val vividFilter = remember { vividWallpaperColorFilter() }
+
     val transition = rememberInfiniteTransition(label = "bg")
-    val offset by transition.animateFloat(
+    val rotation by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = if (animationsEnabled) 90_000 else 1,
+                easing = LinearEasing
+            ),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "rotation"
+    )
+    val drift by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = if (animationsEnabled) 12000 else 1, easing = LinearEasing),
+            animation = tween(
+                durationMillis = if (animationsEnabled) 24_000 else 1,
+                easing = LinearEasing
+            ),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "offset"
+        label = "drift"
     )
-
-    val dark = androidx.compose.material3.MaterialTheme.colorScheme.background.luminance() < 0.5f
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                if (dark) {
-                    Brush.radialGradient(
-                        colors = listOf(
-                            ArcaneVioletDim.copy(alpha = 0.35f + offset * 0.1f),
-                            VoidBlack,
-                            NightSurface,
-                            MysticCyanDim.copy(alpha = 0.12f)
-                        ),
-                        center = Offset(200f + offset * 300f, 100f + offset * 200f),
-                        radius = 900f
-                    )
-                } else {
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFFE8E0FF),
-                            Color(0xFFF5F0FF),
-                            Color(0xFFD4F5F0).copy(alpha = 0.5f)
-                        )
-                    )
+            .background(Color(0xFF0B0918))
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(wallpaper.assetUri)
+                .crossfade(false)
+                .build(),
+            imageLoader = imageLoader,
+            contentDescription = wallpaper.label,
+            contentScale = ContentScale.Crop,
+            colorFilter = vividFilter,
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = 1.45f + drift * 0.08f
+                    scaleY = 1.45f + drift * 0.08f
+                    rotationZ = if (animationsEnabled) rotation else 0f
                 }
-            )
-    )
-}
+        )
 
-private fun Color.luminance(): Float {
-    return 0.299f * red + 0.587f * green + 0.114f * blue
+        // Soft bottom fade only — keeps text readable without washing out the wallpaper
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        0.0f to Color.Transparent,
+                        0.55f to Color.Transparent,
+                        1.0f to Color.Black.copy(alpha = 0.28f)
+                    )
+                )
+        )
+    }
 }

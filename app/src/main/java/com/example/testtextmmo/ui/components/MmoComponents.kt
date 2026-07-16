@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -34,7 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-private val ButtonHeight = 56.dp
+private val ButtonHeight = 64.dp
 private val ButtonShape = RoundedCornerShape(14.dp)
 
 @Composable
@@ -47,7 +45,7 @@ fun GlassCard(
     val shape = RoundedCornerShape(cornerRadius)
     Surface(
         modifier = modifier.clip(shape).border(BorderStroke(1.dp, MaterialTheme.colorScheme.outline), shape),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
         shape = shape
     ) {
         Box(
@@ -94,34 +92,32 @@ fun OutlineAccentButton(text: String, onClick: () -> Unit, modifier: Modifier = 
 fun MmoFilledButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val primary = MaterialTheme.colorScheme.primary
     val secondary = MaterialTheme.colorScheme.secondary
-    Button(
-        onClick = onClick,
-        enabled = enabled,
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = ButtonHeight)
-            .height(ButtonHeight),
-        shape = ButtonShape,
-        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent),
-        contentPadding = ButtonDefaults.ContentPadding
-    ) {
-        Box(
-            Modifier.fillMaxWidth().background(
+            .height(ButtonHeight)
+            .clip(ButtonShape)
+            .background(
                 if (enabled) Brush.horizontalGradient(listOf(primary, secondary))
-                else Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.surfaceVariant)),
+                else Brush.horizontalGradient(
+                    listOf(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.surfaceVariant)
+                ),
                 ButtonShape
-            ),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = if (enabled) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 8.dp)
             )
-        }
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = if (enabled) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
     }
 }
 
@@ -193,12 +189,21 @@ fun StepIndicator(currentStep: Int, totalSteps: Int, modifier: Modifier = Modifi
 }
 
 @Composable
-fun RowScope.BottomNavItem(label: String, icon: @Composable () -> Unit, selected: Boolean, onClick: () -> Unit) {
+fun RowScope.BottomNavItem(
+    label: String,
+    icon: @Composable () -> Unit,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
-        Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick)
-            .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent)
+        modifier
+            .weight(1f)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
             .padding(vertical = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         icon()
         Text(

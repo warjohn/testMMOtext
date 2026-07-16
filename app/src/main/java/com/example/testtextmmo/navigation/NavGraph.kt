@@ -1,15 +1,14 @@
 package com.example.testtextmmo.navigation
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,7 +27,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -42,7 +45,9 @@ import com.example.testtextmmo.ui.screens.home.HomeScreen
 import com.example.testtextmmo.ui.screens.settings.SettingsScreen
 import com.example.testtextmmo.ui.screens.story.StoryCreateSheet
 import com.example.testtextmmo.ui.screens.story.StorySheetType
-import com.example.testtextmmo.ui.theme.ArcaneVioletLight
+import com.example.testtextmmo.ui.theme.AppWallpaper
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.PointerEventPass
 
 @Composable
 fun MmoApp(appState: AppState) {
@@ -51,32 +56,42 @@ fun MmoApp(appState: AppState) {
     val currentRoute = navBackStackEntry?.destination?.route
     var storySheet by remember { mutableStateOf<StorySheetType?>(null) }
 
-    val bottomNavHidden = appState.settings.bottomNavHidden
-    val navEnter = expandVertically(
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
-        expandFrom = Alignment.Bottom
-    ) + fadeIn(tween(420, easing = FastOutSlowInEasing))
-    val navExit = shrinkVertically(
-        animationSpec = tween(320, easing = FastOutSlowInEasing),
-        shrinkTowards = Alignment.Bottom
-    ) + fadeOut(tween(260))
+    val bottomNavVisible = !appState.settings.bottomNavHidden
+    var renderBottomBar by remember { mutableStateOf(bottomNavVisible) }
+    val navProgress = remember { Animatable(if (bottomNavVisible) 1f else 0f) }
+
+    LaunchedEffect(bottomNavVisible) {
+        if (bottomNavVisible) {
+            renderBottomBar = true
+            navProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMediumLow
+                )
+            )
+        } else {
+            navProgress.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing)
+            )
+            renderBottomBar = false
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        AnimatedGradientBackground(animationsEnabled = appState.settings.animationsEnabled)
+        AnimatedGradientBackground(
+            wallpaper = AppWallpaper.fromId(appState.settings.wallpaperId),
+            animationsEnabled = appState.settings.animationsEnabled
+        )
 
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = Color.Transparent,
             bottomBar = {
-                AnimatedVisibility(
-                    visible = !bottomNavHidden,
-                    enter = navEnter,
-                    exit = navExit
-                ) {
+                if (renderBottomBar) {
                     GlassBottomBar(
+                        progress = navProgress.value,
                         currentRoute = currentRoute,
                         onTabSelected = { tab ->
                             navController.navigate(tab.route) {
@@ -95,8 +110,21 @@ fun MmoApp(appState: AppState) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
+                    // Observe double-taps without consuming — children keep normal clicks
                     .pointerInput(Unit) {
-                        detectTapGestures(onDoubleTap = { appState.toggleBottomNav() })
+                        var lastUpTime = 0L
+                        awaitEachGesture {
+                            awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                            val up = waitForUpOrCancellation(pass = PointerEventPass.Initial) ?: return@awaitEachGesture
+                            if (up.isConsumed) return@awaitEachGesture
+                            val now = System.currentTimeMillis()
+                            if (now - lastUpTime < 320L) {
+                                appState.toggleBottomNav()
+                                lastUpTime = 0L
+                            } else {
+                                lastUpTime = now
+                            }
+                        }
                     }
             ) {
                 NavHost(
@@ -136,9 +164,17 @@ fun MmoApp(appState: AppState) {
 
 @Composable
 private fun GlassBottomBar(
+    progress: Float,
     currentRoute: String?,
     onTabSelected: (BottomTab) -> Unit
 ) {
+    val density = LocalDensity.current
+    val spreadPx = with(density) { 96.dp.toPx() }
+    val sinkPx = with(density) { 56.dp.toPx() }
+    val tabs = BottomTab.entries
+    val centerIndex = (tabs.size - 1) / 2f
+    val interactive = progress > 0.45f
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -146,17 +182,29 @@ private fun GlassBottomBar(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BottomTab.entries.forEach { tab ->
+        tabs.forEachIndexed { index, tab ->
+            val fromCenter = index - centerIndex
             BottomNavItem(
                 label = tab.label,
                 selected = currentRoute == tab.route,
-                onClick = { onTabSelected(tab) },
+                onClick = { if (interactive) onTabSelected(tab) },
+                modifier = Modifier.graphicsLayer {
+                    val p = progress.coerceIn(0f, 1f)
+                    val reveal = FastOutSlowInEasing.transform(p)
+                    alpha = reveal
+                    scaleX = 0.2f + 0.8f * reveal
+                    scaleY = 0.2f + 0.8f * reveal
+                    // Collapse into / expand from the bottom-center point
+                    translationX = (1f - reveal) * (-fromCenter) * spreadPx
+                    translationY = (1f - reveal) * sinkPx
+                    transformOrigin = TransformOrigin(0.5f, 1f)
+                },
                 icon = {
                     Icon(
                         imageVector = tab.icon,
                         contentDescription = tab.label,
                         tint = if (currentRoute == tab.route) {
-                            ArcaneVioletLight
+                            MaterialTheme.colorScheme.primary
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         }

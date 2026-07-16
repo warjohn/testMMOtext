@@ -1,5 +1,7 @@
 package com.example.testtextmmo.ui.screens.character
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -26,7 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.testtextmmo.data.AppState
@@ -156,6 +159,42 @@ private fun CharacterCreationWizard(
         else -> false
     }
 
+    if (step == 0) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            SectionHeader(
+                title = if (existing != null) "Редактирование" else "Создание героя",
+                subtitle = "Шаг 1 из $TOTAL_STEPS · ${stepTitle(0)}",
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            StepIndicator(currentStep = 0, totalSteps = TOTAL_STEPS)
+            Spacer(modifier = Modifier.height(20.dp))
+            NameStep(name, { name = it })
+            Spacer(modifier = Modifier.height(24.dp))
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                if (existing != null) {
+                    MmoOutlinedButton("Отмена", onCancel, Modifier.fillMaxWidth())
+                }
+                MmoFilledButton(
+                    text = "Далее",
+                    onClick = { step++ },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = canProceed
+                )
+            }
+        }
+        return
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -171,7 +210,6 @@ private fun CharacterCreationWizard(
         Spacer(modifier = Modifier.height(16.dp))
 
         when (step) {
-            0 -> NameStep(name, { name = it })
             1 -> PixelCharacterCreator(appearance, onChange = { appearance = it })
             2 -> OriginStep(
                 appState, races, classes, selectedRace, selectedClass,
@@ -192,11 +230,7 @@ private fun CharacterCreationWizard(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            if (step > 0) {
-                MmoOutlinedButton("Назад", { step-- }, Modifier.fillMaxWidth())
-            } else if (existing != null) {
-                MmoOutlinedButton("Отмена", onCancel, Modifier.fillMaxWidth())
-            }
+            MmoOutlinedButton("Назад", { step-- }, Modifier.fillMaxWidth())
             if (step < TOTAL_STEPS - 1) {
                 MmoFilledButton("Далее", { step++ }, Modifier.fillMaxWidth(), canProceed)
             } else {
@@ -256,10 +290,6 @@ private fun resolveRaceId(appState: AppState, name: String?) =
 private fun resolveClassId(appState: AppState, name: String?) =
     appState.allClasses().firstOrNull { it.name == name }?.id ?: "warrior"
 
-private fun Modifier.clickableNoRipple(onClick: () -> Unit) = this.then(
-    Modifier.clickable(indication = null, interactionSource = null) { onClick() }
-)
-
 @Composable
 private fun OriginStep(
     appState: AppState,
@@ -315,16 +345,48 @@ private fun <T> SelectionList(
     Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
     items.forEach { item ->
         val selected = id(item) == selectedId
-        GlassCard(
+        val shape = RoundedCornerShape(14.dp)
+        val borderColor = if (selected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.outline
+        }
+        val containerColor = if (selected) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+        } else {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.88f)
+        }
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 3.dp)
-                .then(Modifier.clickableNoRipple { onSelect(item) }),
-            accentColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                .clip(shape)
+                .border(BorderStroke(if (selected) 2.dp else 1.dp, borderColor), shape)
+                .clickable { onSelect(item) },
+            color = containerColor,
+            shape = shape
         ) {
-            Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(label(item), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                Text(badge(item), style = MaterialTheme.typography.labelSmall, color = MysticCyan)
+            Row(
+                Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = label(item),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                    color = if (selected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    }
+                )
+                Text(
+                    text = badge(item),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (selected) MaterialTheme.colorScheme.primary else MysticCyan
+                )
             }
         }
     }

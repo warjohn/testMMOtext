@@ -2,36 +2,6 @@ package com.example.testtextmmo.data.model
 
 import androidx.compose.ui.graphics.Color
 
-enum class ThemeMode { SYSTEM, DARK, LIGHT }
-
-enum class ColorTheme(val label: String, val isDark: Boolean) {
-    ARCANE("Arcane", true),
-    DRACULA("Dracula", true),
-    MONOKAI("Monokai", true),
-    NORD("Nord", true),
-    ONE_DARK("One Dark", true),
-    TOKYO_NIGHT("Tokyo Night", true),
-    GRUVBOX("Gruvbox", true),
-    CATPPUCCIN("Catppuccin", true),
-    SOLARIZED("Solarized", true),
-    GITHUB("GitHub Light", false),
-    ROSE_PINE("Rosé Pine", true),
-    CYBERPUNK("Cyberpunk", true)
-}
-
-enum class TextColorPreset(val label: String, val colorArgb: Long?) {
-    AUTO("Авто", null),
-    WHITE("Белый", 0xFFF4F0FF),
-    WARM("Тёплый", 0xFFEBDBB2),
-    GOLD("Золотой", 0xFFE8B86D),
-    CYAN("Бирюза", 0xFF3DD6C6),
-    LAVENDER("Лиловый", 0xFFC4A7E7),
-    MINT("Мятный", 0xFF98C379),
-    ROSE("Розовый", 0xFFFFB4AB),
-    ICE("Ледяной", 0xFFCDD6F4),
-    DARK("Тёмный", 0xFF1F2328)
-}
-
 enum class StoryType(val label: String) {
     CUSTOM("Моя история"),
     AUTO("Живой мир")
@@ -105,11 +75,9 @@ data class Story(
 )
 
 data class AppSettings(
-    val themeMode: ThemeMode = ThemeMode.DARK,
-    val colorTheme: ColorTheme = ColorTheme.ARCANE,
-    val textColorPreset: TextColorPreset = TextColorPreset.AUTO,
     val fontScale: Float = 1f,
     val animationsEnabled: Boolean = true,
+    val wallpaperId: String = "aurora",
     val hapticFeedback: Boolean = true,
     val autoSave: Boolean = true,
     val showStoryPreviews: Boolean = true,

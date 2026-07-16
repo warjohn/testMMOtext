@@ -21,8 +21,6 @@ import coil.compose.AsyncImage
 import com.example.testtextmmo.data.model.Story
 import com.example.testtextmmo.data.model.StoryGenre
 import com.example.testtextmmo.ui.theme.genreAccent
-import com.example.testtextmmo.ui.theme.paletteFor
-import com.example.testtextmmo.data.model.ColorTheme
 
 data class StoryArt(
     val gradient: List<Color>,
@@ -54,8 +52,7 @@ fun StoryPreviewImage(
     height: androidx.compose.ui.unit.Dp = 140.dp
 ) {
     val art = artFor(story)
-    val palette = paletteFor(ColorTheme.ARCANE)
-    val accent = genreAccent(story.genre, palette)
+    val accent = genreAccent(story.genre)
 
     Box(
         modifier = modifier
@@ -106,8 +103,7 @@ fun LiveWorldPreview(
     modifier: Modifier = Modifier
 ) {
     val art = storyArts[previewArtId] ?: storyArts["default"]!!
-    val palette = paletteFor(ColorTheme.ARCANE)
-    val accent = genreAccent(genre, palette)
+    val accent = genreAccent(genre)
 
     Box(
         modifier = modifier

@@ -42,8 +42,6 @@ import com.example.testtextmmo.data.model.Story
 import com.example.testtextmmo.data.model.StoryStatus
 import com.example.testtextmmo.data.model.StoryType
 import com.example.testtextmmo.ui.theme.genreAccent
-import com.example.testtextmmo.ui.theme.paletteFor
-import com.example.testtextmmo.data.model.ColorTheme
 
 @Composable
 fun StoryCard(
@@ -52,7 +50,7 @@ fun StoryCard(
     modifier: Modifier = Modifier,
     showPreview: Boolean = true
 ) {
-    val accent = genreAccent(story.genre, paletteFor(ColorTheme.ARCANE))
+    val accent = genreAccent(story.genre)
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
